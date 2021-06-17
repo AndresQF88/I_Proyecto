@@ -1,0 +1,252 @@
+---
+title: "Datos Climatico de Liberia"
+output: html_document
+---
+
+```{r setup, include=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Histogramas de Datos Climaticos
+
+
+```{r message = FALSE, echo=FALSE}
+## Cargar librerias 
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+library(hrbrthemes)
+library(gridExtra)
+
+inp <- read.csv("liberia_datos_climaticos.csv", na.strings = "", dec = ",")
+
+windowsFonts(Times=windowsFont("TT Times New Roman"))
+```
+
+
+```{r message=FALSE, echo=FALSE}
+## Eliminar los N/A
+inp[!complete.cases(inp),]
+newinp <- na.omit(inp)
+newinp[!complete.cases(inp),]
+
+## Renombrar variables 
+newinp_r <- newinp %>%
+  rename(Fecha = Date,
+  Temperatura = Temperatura..Celsius.,
+  HumedadRelativa = HumedadRelativa....,
+  VelocidadViento = VelocidadViento..m.s.,
+  Lluvia = Lluvia..mm.,
+  Irradiación = Irradiacion..W.m2.,
+  EvapoTraspiración = EvapoTranspiracion..mm.)
+```
+
+
+```{r message = FALSE, echo=FALSE}
+
+# Gráfico de Temperatura
+ p1 <- ggplot(newinp_r, aes(x = Temperatura)) +
+  geom_histogram(color = "red",
+                 fill = "orange",
+                 alpha = 0.4) +
+  ggtitle("Temperatura") +
+  xlab("Rango)") +
+  ylab("% ºC") +
+  theme_ipsum()
+
+# Histograma HumedadRelativa
+p2 <- ggplot(newinp_r,aes(x = HumedadRelativa)) +
+  geom_histogram(
+    binwidth = 2,
+    color = "blue",
+    fill = "gray",
+    alpha = 0.4
+  ) +
+  ggtitle("Humedad relativa") +
+  xlab("Rango") +
+  ylab("% Humedad") +
+  theme_ipsum()
+
+
+# Histograma de Velocidad de Vientos
+p3 <- ggplot(newinp_r, aes(x = VelocidadViento)) +
+  geom_histogram(
+    binwidth = 1,
+    color = "black",
+    fill = "brown",
+    alpha = 0.4
+  ) +
+  ggtitle("Velocidad de Vientos") +
+  xlab("Rango") +
+  ylab("% m/s") +
+  theme_ipsum()
+
+# Gráfico de Lluvia 
+p4 <- ggplot(newinp_r,aes(x = Lluvia)) +
+  geom_histogram(
+    bins = 15,
+    color = "blue",
+    fill = "darkblue",
+    alpha = 0.4
+  ) +
+  ggtitle("Lluvias") +
+  xlab(" % mm") +
+  ylab("Densidad") +
+  theme_ipsum()
+
+# Gráfico Irradiación
+p5 <- ggplot(newinp_r,aes(x = Irradiación)) +
+  geom_histogram(
+    binwidth = 10,
+    color = "black",
+    fill = "green",
+    alpha = 0.4
+  ) +
+  ggtitle("Irradición Climatológica") +
+  xlab("Rango") +
+  ylab("% W/m2") + 
+  theme_ipsum()
+
+# Gráfico Evapo Transpiración
+p6 <- ggplot(newinp_r, aes(x = EvapoTraspiración)) +
+  geom_histogram(
+    binwidth = 1,
+    color = "black",
+    fill = "yellow",
+    alpha = 0.4
+  ) +
+  ggtitle("Evaporación y Transpiración") +
+  xlab("Evapo_Transpiración ") +
+  ylab("Densidad (mm)") +
+  theme_ipsum()
+```
+
+## Visualización histogramas de datos climaticos de Liberia
+
+```{r echo=FALSE}
+grid.arrange(p1,p2,p3,p4,p5,p6, nrow = 3, ncol=2)
+
+```
+
+## Promedio Datos Climaticos
+
+```{r message=FALSE, echo=FALSE}
+Promedio <- newinp_r %>%
+  select(
+    Fecha,
+    Temperatura,
+    HumedadRelativa,
+    VelocidadViento,
+    Lluvia,
+    Irradiación,
+    EvapoTraspiración
+  ) %>%
+  mutate(Fecha = as.Date(Fecha, Format = "%d/%m/%Y")) %>%
+  group_by(Fecha = format(Fecha, "%m")) %>%
+  summarise(
+    Temperatura = mean(Temperatura),
+    HumedadRelativa = mean(HumedadRelativa),
+    VelocidadViento = mean(VelocidadViento),
+    Lluvia = mean(Lluvia),
+    Irradiación = mean(Irradiación),
+    EvapoTraspiración = mean(EvapoTraspiración)
+  )
+
+
+```
+
+
+```{r message = FALSE, echo = FALSE}
+m_p1 <-
+  ggplot(Promedio, aes(x = Fecha, y = Temperatura, group = 2)) +
+  geom_line(color = "red",
+            size = 2
+            ) +
+  xlab("Promedio de Humedad Relativa ") +
+  ylab("ºC")
+
+m_p2<-
+  ggplot(Promedio, aes(x = Fecha, y = HumedadRelativa, group = 2)) +
+  geom_line(color = "blue",
+            size = 2
+  ) +
+  xlab("Promedio de Velocidad de Viento") +
+  ylab("%")
+
+m_p3 <-
+  ggplot(Promedio, aes(x = Fecha, y = VelocidadViento, group = 2)) +
+  geom_line(color = "brown",
+            size = 2) +
+  xlab("Promedio Velocidad de Vietos") +
+  ylab("m/s")
+
+m_p4 <-
+  ggplot(Promedio, aes(x = Fecha, y = Lluvia, group = 2)) +
+  geom_line(color = "darkblue",
+            size = 2) +
+  xlab("Promedio de Lluvias") +
+  ylab("mm")
+  
+m_p5 <-
+  ggplot(Promedio, aes(x = Fecha, y = Irradiación, group = 2)) +
+  geom_line(color = "green",
+            size = 2) +
+  xlab("Promedio de Irradiación") +
+  ylab("W.m2")
+
+m_p6 <-
+  ggplot(Promedio, aes(x = Fecha, y = EvapoTraspiración, group = 1)) +
+  geom_line(color = "yellow",
+            size = 2) +
+  xlab("Promedio de la Evaporación y la Transpiración") +
+  ylab("mm")
+
+grid.arrange(m_p1,m_p2,m_p3,m_p4,m_p5,m_p6, nrow = 6, ncol = 1)
+```
+
+## Relación Variables 
+
+```{r message=FALSE, echo=FALSE}
+R_p1 <-
+  ggplot(newinp_r, aes(x = Fecha, y = Temperatura, group = 1)) +
+  geom_point(color = "red",
+             size = 1) +
+  xlab("Fecha") +
+  ylab("ºC")
+
+R_p2 <-
+  ggplot(newinp_r, aes(x = Fecha, y = HumedadRelativa, group = 1)) +
+  geom_point(color = "blue",
+             size = 1) +
+  xlab("Fecha") +
+  ylab("ºC")
+
+R_p3 <-
+  ggplot(newinp_r, aes(x = Fecha, y = VelocidadViento, group = 1)) +
+  geom_point(color = "brown",
+             size = 1) +
+  xlab("Fechan") +
+  ylab("ºC")
+
+R_p4 <-  ggplot(newinp_r, aes(x = Fecha, y = Lluvia, group = 1)) +
+  geom_point(color = "darkblue",
+             size = 1) +
+  xlab("Fechan") +
+  ylab("ºC")
+
+R_p5 <-
+  ggplot(newinp_r, aes(x = Fecha, y = Irradiación, group = 1)) +
+  geom_point(color = "darkgreen",
+             size = 1) +
+  xlab("Fechan") +
+  ylab("ºC")
+
+R_p6 <-
+  ggplot(newinp_r, aes(x = Fecha, y = EvapoTraspiración, group = 1)) +
+  geom_point(color = "gray",
+             size = 1) +
+  xlab("Promedio de la Evaporación y la Transpiración") +
+  ylab("mm")
+
+grid.arrange(R_p1,R_p2,R_p3,R_p4,R_p5,R_p6, nrow = 6, ncol = 1)
+```
